@@ -28,6 +28,13 @@ func (ds *DNS01Setting) NewDNS01() (DNS01, error) {
 			return nil, fmt.Errorf("dns config of '%s' is not valid: %v", ds.Type, err)
 		}
 		return &cf, nil
+	case "afraid":
+		var af Afraid
+		err := json.Unmarshal(ds.Config, &af)
+		if err != nil {
+			return nil, fmt.Errorf("dns config of '%s' is not valid: %v", ds.Type, err)
+		}
+		return &af, nil
 	default:
 		return nil, fmt.Errorf("dns type %s is not surported", ds.Type)
 	}
