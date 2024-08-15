@@ -72,6 +72,7 @@ test-win32:
 
 build: linux-amd64 linux-386 linux-arm linux-arm64 win64 freebsd-amd64
 	chmod +x $(BINDIR)/$(NAME)-*
+	cd $(BINDIR)
 	zip -m $(NAME)-linux-amd64.zip       $(NAME)-linux-amd64
 	zip -m $(NAME)-linux-386.zip         $(NAME)-linux-386
 	zip -m $(NAME)-linux-arm.zip         $(NAME)-linux-arm
