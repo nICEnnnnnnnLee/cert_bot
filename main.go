@@ -32,6 +32,7 @@ var (
 	keyFile             string
 	dialer              net.Dialer
 	dnsServer           string
+	txtMaxCheck         int
 )
 
 type acmeAccountFile struct {
@@ -40,8 +41,8 @@ type acmeAccountFile struct {
 }
 
 func main() {
-	// flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptProduction,
-	flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptStaging,
+	flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptProduction,
+		// flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptStaging,
 		"acme directory url - defaults to lets encrypt v2 staging url if not provided.\n LetsEncryptProduction = https://acme-v02.api.letsencrypt.org/directory\n LetsEncryptStaging = https://acme-staging-v02.api.letsencrypt.org/directory \n ZeroSSLProduction = https://acme.zerossl.com/v2/DV90")
 	flag.StringVar(&contactsList, "contact", "",
 		"a list of comma separated contact emails to use when creating a new account (optional, dont include 'mailto:' prefix)")
@@ -55,6 +56,8 @@ func main() {
 		"dnsServer to check txt record")
 	flag.BoolVar(&exitIfDns01NotValid, "exitifdns01fail", true,
 		"exit if dns01 config is not valid, or just manualy set dns txt record")
+	flag.IntVar(&txtMaxCheck, "txtmaxcheck", 30,
+		"the max time trying to verify the txt record. program will continue after max retries no matter if the txt record is valid or not from local spec")
 	flag.StringVar(&certFile, "certfile", "cert.pem",
 		"the file that the pem encoded certificate chain will be saved to")
 	flag.StringVar(&keyFile, "keyfile", "privkey.pem",
@@ -140,7 +143,7 @@ func main() {
 				log.Fatalf("Error set txt record: %v", err)
 			}
 			// wait for record refresh
-			for i := 1; i <= 30; i++ {
+			for i := 1; i <= txtMaxCheck; i++ {
 				log.Printf("Wait %ds, let the txt record update\n", i*5)
 				time.Sleep(time.Second * 5)
 				err = checkTxtRecord(auth.Identifier.Value, txt)
