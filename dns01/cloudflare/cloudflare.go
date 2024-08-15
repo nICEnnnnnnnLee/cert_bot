@@ -9,14 +9,48 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/nicennnnnnnlee/cert_bot/dns01/common"
 )
+
+func init() {
+	common.RegisterDNS01Option(option)
+}
+
+func option(ds *common.DNS01Setting) (common.DNS01, error) {
+	if ds.Type != "cloudflare" && ds.Type != "cf" {
+		return nil, nil
+	}
+	var dns01 Cloudflare
+	log.Println("Unmarshal to Cloudflare dns01 settings")
+	err := json.Unmarshal(ds.Config, &dns01)
+	if err != nil {
+		return nil, fmt.Errorf("dns config of '%s' is not valid: %v", ds.Type, err)
+	}
+	return &dns01, nil
+}
 
 type Cloudflare struct {
 	ApiEmail string `json:"api-email"`
 	ApiKey   string `json:"api-key"`
+	Domain   string `json:"domain"`
+	ZoneId   string `json:"zoneId"`
 	// AccountId string `json:"accountId"`
-	Domain string `json:"domain"`
-	ZoneId string `json:"zoneId"`
+}
+
+func (n *Cloudflare) UnmarshalJSON(data []byte) error {
+	type alias Cloudflare
+	obj := (*alias)(n)
+	if err := json.Unmarshal(data, obj); err != nil {
+		return err
+	}
+	if len(obj.ApiKey) == 0 {
+		return fmt.Errorf("Cloudflare.ApiKey should not be empty")
+	}
+	if len(obj.Domain) == 0 {
+		return fmt.Errorf("Cloudflare.Domain should not be empty")
+	}
+	return nil
 }
 
 type txtRecord struct {

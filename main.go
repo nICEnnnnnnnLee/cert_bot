@@ -22,17 +22,16 @@ import (
 )
 
 var (
-	domains                string
-	directoryUrl           string
-	contactsList           string
-	accountFile            string
-	dns01File              string
-	exitIfDns01NotValid    bool
-	cloudflareConfigBase64 string
-	certFile               string
-	keyFile                string
-	dialer                 net.Dialer
-	dnsServer              string
+	domains             string
+	directoryUrl        string
+	contactsList        string
+	accountFile         string
+	dns01File           string
+	exitIfDns01NotValid bool
+	certFile            string
+	keyFile             string
+	dialer              net.Dialer
+	dnsServer           string
 )
 
 type acmeAccountFile struct {
@@ -56,8 +55,6 @@ func main() {
 		"dnsServer to check txt record")
 	flag.BoolVar(&exitIfDns01NotValid, "exitifdns01fail", true,
 		"exit if dns01 config is not valid, or just manualy set dns txt record")
-	flag.StringVar(&cloudflareConfigBase64, "cloudflare", "",
-		"the base64 string of cloudflare config")
 	flag.StringVar(&certFile, "certfile", "cert.pem",
 		"the file that the pem encoded certificate chain will be saved to")
 	flag.StringVar(&keyFile, "keyfile", "privkey.pem",
@@ -245,6 +242,7 @@ func checkTxtRecord(identifier, expectedValue string) error {
 		},
 	}
 	txts, err := resolver.LookupTXT(context.Background(), "_acme-challenge."+identifier)
+	// txts, err := net.LookupTXT("_acme-challenge." + identifier)
 	if err != nil {
 		return err
 	}

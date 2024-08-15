@@ -2,6 +2,7 @@ package dns01
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html"
 	"io"
@@ -11,7 +12,25 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/nicennnnnnnlee/cert_bot/dns01/common"
 )
+
+func init() {
+	common.RegisterDNS01Option(option)
+}
+
+func option(ds *common.DNS01Setting) (common.DNS01, error) {
+	if ds.Type != "afraid" && ds.Type != "afraid.org" {
+		return nil, nil
+	}
+	var dns01 Afraid
+	err := json.Unmarshal(ds.Config, &dns01)
+	if err != nil {
+		return nil, fmt.Errorf("dns config of '%s' is not valid: %v", ds.Type, err)
+	}
+	return &dns01, nil
+}
 
 var (
 	regAfraidAnchor = regexp.MustCompile(`<a.*?>(.*?)</a>`)
@@ -22,6 +41,21 @@ var (
 type Afraid struct {
 	DSNCookie string `json:"dns_cookie"`
 	DomainId  string `json:"domain_id"`
+}
+
+func (n *Afraid) UnmarshalJSON(data []byte) error {
+	type alias Afraid
+	obj := (*alias)(n)
+	if err := json.Unmarshal(data, obj); err != nil {
+		return err
+	}
+	if len(obj.DSNCookie) == 0 {
+		return fmt.Errorf("Afraid.DSNCookie should not be empty")
+	}
+	if len(obj.DomainId) == 0 {
+		return fmt.Errorf("Afraid.DomainId should not be empty")
+	}
+	return nil
 }
 
 func (af *Afraid) DeleteTXT(identifier string) (err error) {
@@ -129,9 +163,9 @@ func (af *Afraid) iteratorTxtRecord(identifier string, deleteFunc func(dataId st
 
 		td, tdIdx, _ = nextContent(tr, "<td", "</td>", tdIdx)
 		recordName := regAfraidAnchor.FindStringSubmatch(td)[1]
-		// if recordName != "_acme-challenge."+identifier {
-		// 	continue
-		// }
+		if recordName != "_acme-challenge."+identifier {
+			continue
+		}
 		td, tdIdx, _ = nextContent(tr, "<td", "</td>", tdIdx)
 		recordType := regAfraidTd.FindStringSubmatch(td)[1]
 		if recordType != "TXT" {

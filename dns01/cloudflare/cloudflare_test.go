@@ -3,7 +3,7 @@ package dns01_test
 import (
 	"testing"
 
-	"github.com/nicennnnnnnlee/cert_bot/dns01"
+	dns01 "github.com/nicennnnnnnlee/cert_bot/dns01/cloudflare"
 )
 
 // go test ./dns01 -v -run TestCf
