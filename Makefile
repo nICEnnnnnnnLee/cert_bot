@@ -72,13 +72,12 @@ test-win32:
 
 build: linux-amd64 linux-386 linux-arm linux-arm64 win64 freebsd-amd64
 	chmod +x $(BINDIR)/$(NAME)-*
-	zip -m files.zip config.json static/* files/*
-	cp files.zip $(BINDIR)/$(NAME)-linux-amd64.zip      && cd $(BINDIR) && zip -m $(NAME)-linux-amd64.zip       $(NAME)-linux-amd64 && cd ..
-	cp files.zip $(BINDIR)/$(NAME)-linux-386.zip        && cd $(BINDIR) && zip -m $(NAME)-linux-386.zip         $(NAME)-linux-386 && cd ..
-	cp files.zip $(BINDIR)/$(NAME)-linux-arm.zip        && cd $(BINDIR) && zip -m $(NAME)-linux-arm.zip         $(NAME)-linux-arm && cd ..
-	cp files.zip $(BINDIR)/$(NAME)-linux-arm64.zip      && cd $(BINDIR) && zip -m $(NAME)-linux-arm64.zip       $(NAME)-linux-arm64 && cd ..
-	cp files.zip $(BINDIR)/$(NAME)-freebsd-amd64.zip    && cd $(BINDIR) && zip -m $(NAME)-freebsd-amd64.zip     $(NAME)-freebsd-amd64 && cd ..
-	cp files.zip $(BINDIR)/$(NAME)-win64.zip            && cd $(BINDIR) && zip -m $(NAME)-win64.zip             $(NAME)-win64.exe && cd ..
+	zip -m $(NAME)-linux-amd64.zip       $(NAME)-linux-amd64 && cd ..
+	zip -m $(NAME)-linux-386.zip         $(NAME)-linux-386 && cd ..
+	zip -m $(NAME)-linux-arm.zip         $(NAME)-linux-arm && cd ..
+	zip -m $(NAME)-linux-arm64.zip       $(NAME)-linux-arm64 && cd ..
+	zip -m $(NAME)-freebsd-amd64.zip     $(NAME)-freebsd-amd64 && cd ..
+	zip -m $(NAME)-win64.zip             $(NAME)-win64.exe && cd ..
 
 clean:
 	rm $(BINDIR)/*
