@@ -72,14 +72,12 @@ test-win32:
 
 build: linux-amd64 linux-386 linux-arm linux-arm64 win64 freebsd-amd64
 	chmod +x $(BINDIR)/$(NAME)-*
-	cd $(BINDIR)
-	ls -l
-	zip -m $(NAME)-linux-amd64.zip       $(NAME)-linux-amd64
-	zip -m $(NAME)-linux-386.zip         $(NAME)-linux-386
-	zip -m $(NAME)-linux-arm.zip         $(NAME)-linux-arm
-	zip -m $(NAME)-linux-arm64.zip       $(NAME)-linux-arm64
-	zip -m $(NAME)-freebsd-amd64.zip     $(NAME)-freebsd-amd64
-	zip -m $(NAME)-win64.zip             $(NAME)-win64.exe
+	cd $(BINDIR) && zip -m $(NAME)-linux-amd64.zip       $(NAME)-linux-amd64
+	cd $(BINDIR) && zip -m $(NAME)-linux-386.zip         $(NAME)-linux-386
+	cd $(BINDIR) && zip -m $(NAME)-linux-arm.zip         $(NAME)-linux-arm
+	cd $(BINDIR) && zip -m $(NAME)-linux-arm64.zip       $(NAME)-linux-arm64
+	cd $(BINDIR) && zip -m $(NAME)-freebsd-amd64.zip     $(NAME)-freebsd-amd64
+	cd $(BINDIR) && zip -m $(NAME)-win64.zip             $(NAME)-win64.exe
 
 clean:
 	rm $(BINDIR)/*
