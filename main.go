@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -11,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -29,6 +31,8 @@ var (
 	cloudflareConfigBase64 string
 	certFile               string
 	keyFile                string
+	dialer                 net.Dialer
+	dnsServer              string
 )
 
 type acmeAccountFile struct {
@@ -37,8 +41,8 @@ type acmeAccountFile struct {
 }
 
 func main() {
-	flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptProduction,
-		// flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptStaging,
+	// flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptProduction,
+	flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptStaging,
 		"acme directory url - defaults to lets encrypt v2 staging url if not provided.\n LetsEncryptProduction = https://acme-v02.api.letsencrypt.org/directory\n LetsEncryptStaging = https://acme-staging-v02.api.letsencrypt.org/directory \n ZeroSSLProduction = https://acme.zerossl.com/v2/DV90")
 	flag.StringVar(&contactsList, "contact", "",
 		"a list of comma separated contact emails to use when creating a new account (optional, dont include 'mailto:' prefix)")
@@ -48,6 +52,8 @@ func main() {
 		"the file that the account json data will be saved to/loaded from (will create new file if not exists)")
 	flag.StringVar(&dns01File, "dns01file", "dns01.json",
 		"the file that the dns01 json data will be loaded from (will exit if not exists)")
+	flag.StringVar(&dnsServer, "dnsserver", "8.8.8.8:53",
+		"dnsServer to check txt record")
 	flag.BoolVar(&exitIfDns01NotValid, "exitifdns01fail", true,
 		"exit if dns01 config is not valid, or just manualy set dns txt record")
 	flag.StringVar(&cloudflareConfigBase64, "cloudflare", "",
@@ -110,6 +116,7 @@ func main() {
 	log.Printf("Order created: %s", order.URL)
 
 	// loop through each of the provided authorization urls
+	dMap := make(map[string]interface{})
 	for _, authUrl := range order.Authorizations {
 		// fetch the authorization data from the acme service given the provided authorization url
 		log.Printf("Fetching authorization: %s", authUrl)
@@ -127,20 +134,28 @@ func main() {
 
 		log.Println("TXT record to set:", txt)
 		if dns01 != nil {
-			dns01.DeleteTXT(auth.Identifier.Value)
+			if _, ok := dMap[auth.Identifier.Value]; !ok {
+				dns01.DeleteTXT(auth.Identifier.Value)
+				dMap[auth.Identifier.Value] = nil
+			}
 			err = dns01.SetTXT(txt)
 			if err != nil {
 				log.Fatalf("Error set txt record: %v", err)
 			}
 			// wait for record refresh
-			log.Println("Wait 20s, let the txt record update")
-			time.Sleep(time.Second * 5)
-			log.Println("Wait 15s, let the txt record update")
-			time.Sleep(time.Second * 5)
-			log.Println("Wait 10s, let the txt record update")
-			time.Sleep(time.Second * 5)
-			log.Println("Wait 05s, let the txt record update")
-			time.Sleep(time.Second * 5)
+			for i := 1; i <= 30; i++ {
+				log.Printf("Wait %ds, let the txt record update\n", i*5)
+				time.Sleep(time.Second * 5)
+				err = checkTxtRecord(auth.Identifier.Value, txt)
+				if err != nil {
+					log.Println(err)
+				} else {
+					break
+				}
+			}
+			if err != nil {
+				log.Println("txt record do not match after a long time")
+			}
 		} else {
 			var input string
 			log.Println("Please Press Enter after txt record is set：")
@@ -220,6 +235,28 @@ func main() {
 	}
 
 	log.Printf("Done.")
+}
+
+func checkTxtRecord(identifier, expectedValue string) error {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			return dialer.DialContext(ctx, "udp", dnsServer)
+		},
+	}
+	txts, err := resolver.LookupTXT(context.Background(), "_acme-challenge."+identifier)
+	if err != nil {
+		return err
+	}
+	if len(txts) == 0 {
+		return fmt.Errorf("no txt record found")
+	}
+	for idx := range txts {
+		if txts[idx] == expectedValue {
+			return nil
+		}
+	}
+	return fmt.Errorf("expected %s, found %s", expectedValue, txts)
 }
 
 func loadAccount(client acme.Client) (acme.Account, error) {
