@@ -1,16 +1,18 @@
-package dns01
+package dns01_test
 
 import (
 	"testing"
+
+	"github.com/nicennnnnnnlee/cert_bot/dns01"
 )
 
 // go test ./dns01 -v -run TestCf
 func TestCf(t *testing.T) {
 
-	cf := &Cloudflare{
+	cf := &dns01.Cloudflare{
 		ApiEmail: "example@gmail.com", // ApiEmail不为空时，ApiKey请使用GlobalKey
 		ApiKey:   "Global key or Dedicated token",
-		Domain: "Root domain in the Cloudflare panel",
+		Domain:   "Root domain in the Cloudflare panel",
 		// ZoneId:    "The zone id of the domain", // 可以不填
 	}
 	{
@@ -20,7 +22,7 @@ func TestCf(t *testing.T) {
 		// }
 	}
 	{
-		err := cf.DeleteTXT("test.xxx.com")	// the domain is auth.Identifier.Value
+		err := cf.DeleteTXT("test.xxx.com") // the domain is auth.Identifier.Value
 		if err != nil {
 			panic(err)
 		}
