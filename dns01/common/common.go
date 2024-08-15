@@ -58,8 +58,12 @@ func FromFile(dns01File string) (DNS01, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error loading dns01 file: %v", err)
 	}
+	return FromBytes(raw)
+}
+
+func FromBytes(raw []byte) (DNS01, error) {
 	var dns01 DNS01Setting
-	err = json.Unmarshal(raw, &dns01)
+	err := json.Unmarshal(raw, &dns01)
 	if err != nil {
 		return nil, fmt.Errorf("no valid dns01 config json provided: %v", err)
 	}

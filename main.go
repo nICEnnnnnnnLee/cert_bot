@@ -1,3 +1,5 @@
+//go:generate statik -src=. -include=dns01.json,account.json,*.example
+
 package main
 
 import (
@@ -11,14 +13,18 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/eggsampler/acme/v3"
-	"github.com/nicennnnnnnlee/cert_bot/dns01"
+	dns01_tool "github.com/nicennnnnnnlee/cert_bot/dns01"
+	_ "github.com/nicennnnnnnlee/cert_bot/statik"
+	"github.com/rakyll/statik/fs"
 )
 
 var (
@@ -33,6 +39,7 @@ var (
 	dialer              net.Dialer
 	dnsServer           string
 	txtMaxCheck         int
+	statikFS            http.FileSystem
 )
 
 type acmeAccountFile struct {
@@ -68,15 +75,31 @@ func main() {
 	if domains == "" {
 		log.Fatal("No domains provided")
 	}
-
-	dns01, err := dns01.FromFile(dns01File)
+	var err error
+	statikFS, err = fs.New()
 	if err != nil {
-		if exitIfDns01NotValid {
-			log.Fatalf("%v", err)
-		} else {
-			log.Println(err)
-			log.Println("dns01 config is not valid, you need manualy change the DNS txt record youself")
+		log.Fatal(err)
+	}
+	dns01, err := dns01_tool.FromFile(dns01File)
+	if err != nil {
+		log.Printf("parse dns01 file fail %s :%v\n", dns01File, err)
+		log.Println("try config in memory")
+		file, err := statikFS.Open("/dns01.json")
+		if err == nil {
+			defer file.Close()
+			log.Println("open config /dns01.json in memory")
+			raw, _ := io.ReadAll(file)
+			dns01, err = dns01_tool.FromBytes(raw)
 		}
+		if err != nil {
+			if exitIfDns01NotValid {
+				log.Fatalf("%v", err)
+			} else {
+				log.Println(err)
+				log.Println("dns01 config is not valid, you need manually change the DNS txt record youself")
+			}
+		}
+
 	}
 
 	// create a new acme client given a provided (or default) directory url
@@ -135,8 +158,11 @@ func main() {
 		log.Println("TXT record to set:", txt)
 		if dns01 != nil {
 			if _, ok := dMap[auth.Identifier.Value]; !ok {
+				log.Println(auth.Identifier.Value, "not in map")
 				dns01.DeleteTXT(auth.Identifier.Value)
 				dMap[auth.Identifier.Value] = nil
+			} else {
+				log.Println(auth.Identifier.Value, " in map")
 			}
 			err = dns01.SetTXT(txt)
 			if err != nil {
@@ -263,7 +289,14 @@ func checkTxtRecord(identifier, expectedValue string) error {
 func loadAccount(client acme.Client) (acme.Account, error) {
 	raw, err := os.ReadFile(accountFile)
 	if err != nil {
-		return acme.Account{}, fmt.Errorf("error reading account file %q: %v", accountFile, err)
+		log.Printf("error reading account file from disk %q: %v\n", accountFile, err)
+		log.Println("loading account file from memory")
+		file, err := statikFS.Open("/account.json")
+		if err != nil {
+			return acme.Account{}, fmt.Errorf("error reading account file /account.json from memory: %v", err)
+		}
+		defer file.Close()
+		raw, _ = io.ReadAll(file)
 	}
 	var aaf acmeAccountFile
 	if err := json.Unmarshal(raw, &aaf); err != nil {

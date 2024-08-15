@@ -7,3 +7,4 @@ import (
 )
 
 var FromFile = common.FromFile
+var FromBytes = common.FromBytes
