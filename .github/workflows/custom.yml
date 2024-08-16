@@ -22,6 +22,10 @@ on:
         description: 'release notes'
         required: false
         default: 
+  push:
+    paths:
+      # Trigger only when src/** changes
+      - ".github/release.json"
 jobs:
   build:
     runs-on: ubuntu-latest
