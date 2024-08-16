@@ -133,3 +133,9 @@ cet_bot -domains example.org,*.example.org              \
     -certfile     ./certs/example.org/cert.pem          \
     -dnsserver 1.1.1.1:53 -exitifdns01fail=false
 ```
+
+# Custom your private app
+You can insert `account.json` and `dns01.json` into executable binary, and custom the default `-domains` value.  
+
+After that, every time you need is to run `cet_bot` without `-domains`,`-accountfile` or `-dns01file`.  
+Just see the `custom` branch.
