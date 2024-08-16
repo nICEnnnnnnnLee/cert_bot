@@ -52,14 +52,14 @@ jobs:
       env:
         dns01FileContent: ${{ inputs.dns01FileContent }}
       run: |
-        echo  "$(dns01FileContent)" > dns01.json
+        echo  "$dns01FileContent" > dns01.json
 
     - name: Set accountFileContent
       if: ${{ inputs.accountFileContent != '' }}
       env:
         accountFileContent: ${{ inputs.accountFileContent }}
       run: |
-        echo  "$(accountFileContent)" > account.json
+        echo  "$accountFileContent" > account.json
 
     - name: Read tag_latest
       id: tag_latest
