@@ -56,11 +56,11 @@ jobs:
         property: tag_latest
 
     - name: Get Go dependencies
-        run: |
-          go mod download
-          go install github.com/rakyll/statik@v0.1.7
-          go generate
-          
+      run: |
+        go mod download
+        go install github.com/rakyll/statik@v0.1.7
+        go generate
+
     - run: make -j build
       env:
         BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
