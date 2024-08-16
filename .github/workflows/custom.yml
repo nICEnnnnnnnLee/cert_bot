@@ -1,0 +1,99 @@
+name: Custom Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      domains:
+        description: 'Same as input value -domains'
+        required: false
+        default: 
+
+      dns01FileContent:
+        description: 'Same as file content from -dns01File'
+        required: false
+        default: 
+        
+      accountFileContent:
+        description: 'Same as file content from -accountFile'
+        required: false
+        default: 
+      
+      release_notes:
+        description: 'release notes'
+        required: false
+        default: 
+
+      debug:
+        description: 'if set to true, show inputs in logs'
+        type: boolean
+        default: false
+  # push:
+  #   paths:
+  #     # Trigger only when src/** changes
+  #     - ".github/release.json"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+    # Run this GitHub Action before any other steps in your workflow. 
+    - name: Hide the inputs values to keep them private in the logs when running this workflow
+      if: ${{ github.event.inputs.debug != 'true'}}
+      uses: levibostian/action-hide-sensitive-inputs@v1
+    - uses: actions/checkout@v4
+      with:
+        ref: custom
+    - uses: actions/setup-go@v5.0.0
+      with:
+        go-version: 1.21
+
+    - name: Set dns01FileContent
+      if: ${{ inputs.dns01FileContent != '' }}
+      env:
+        dns01FileContent: ${{ inputs.dns01FileContent }}
+      run: |
+        echo  "$dns01FileContent" > dns01.json
+
+    - name: Set accountFileContent
+      if: ${{ inputs.accountFileContent != '' }}
+      env:
+        accountFileContent: ${{ inputs.accountFileContent }}
+      run: |
+        echo  "$accountFileContent" > account.json
+
+    - name: Read tag_latest
+      id: tag_latest
+      uses:  ashley-taylor/read-json-property-action@v1.2
+      with:
+        path: ./.github/release.json
+        property: tag_latest
+
+    - name: Get Go dependencies
+      run: |
+        go mod download
+        go install github.com/rakyll/statik@v0.1.7
+        go generate
+
+    - run: make -j build
+      env:
+        BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
+        domains: ${{ inputs.domains }}
+        
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{steps.tag_latest.outputs.value}}
+        name: CertBot - v${{steps.tag_latest.outputs.value}}
+        body: ${{ inputs.release_notes }}
+        draft: false
+        prerelease: false
+
+    - run: make -j upload
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_RELEASE_UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
+        domains: ${{ inputs.domains }}
