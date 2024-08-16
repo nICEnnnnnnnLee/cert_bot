@@ -98,6 +98,7 @@ func main() {
 			defer file.Close()
 			log.Println("open config /dns01.json in memory")
 			raw, _ := io.ReadAll(file)
+			log.Println(string(raw))
 			dns01, err = dns01_tool.FromBytes(raw)
 		}
 		if err != nil {
