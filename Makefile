@@ -8,7 +8,13 @@ ifeq ($(BOT_VERSION),)
 BOT_VERSION=Unknown
 endif
 
-NAME=cert_bot
+ifeq ($(domains),)
+NAME_SUFFIX=
+else
+NAME_SUFFIX=.$(domains)
+endif
+
+NAME=cert_bot$(NAME_SUFFIX)
 BINDIR=bin
 GOBUILD=CGO_ENABLED=0 go build -ldflags '-X main.domains=$(domains) -X main.version=$(BOT_VERSION) -X main.buildTime=$(COMPILE_TIME) -w -s -buildid='
 # GOBUILD=CGO_ENABLED=0 go build -ldflags '-w -s -buildid='
