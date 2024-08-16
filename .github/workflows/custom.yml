@@ -40,11 +40,15 @@ jobs:
 
     - name: Set dns01FileContent
       if: ${{ inputs.dns01FileContent != '' }}
+      env:
+        dns01FileContent: ${{ inputs.dns01FileContent }}
       run: |
         echo  $(dns01FileContent) > dns01.json
 
     - name: Set accountFileContent
       if: ${{ inputs.accountFileContent != '' }}
+      env:
+        accountFileContent: ${{ inputs.accountFileContent }}
       run: |
         echo  $(accountFileContent) > account.json
 
@@ -82,3 +86,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_RELEASE_UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
+        domains: ${{ inputs.domains }}
