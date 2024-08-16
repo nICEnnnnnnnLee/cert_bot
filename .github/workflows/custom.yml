@@ -22,6 +22,11 @@ on:
         description: 'release notes'
         required: false
         default: 
+
+      debug:
+        description: 'if set to true, show inputs in logs'
+        type: boolean
+        default: false
   push:
     paths:
       # Trigger only when src/** changes
@@ -31,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
+    # Run this GitHub Action before any other steps in your workflow. 
+    - name: Hide the inputs values to keep them private in the logs when running this workflow
+      if: ${{ github.event.inputs.debug != 'true'}}
+      uses: levibostian/action-hide-sensitive-inputs@v1
     - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.ref }}
@@ -43,14 +52,14 @@ jobs:
       env:
         dns01FileContent: ${{ inputs.dns01FileContent }}
       run: |
-        echo  $(dns01FileContent) > dns01.json
+        echo  "$(dns01FileContent)" > dns01.json
 
     - name: Set accountFileContent
       if: ${{ inputs.accountFileContent != '' }}
       env:
         accountFileContent: ${{ inputs.accountFileContent }}
       run: |
-        echo  $(accountFileContent) > account.json
+        echo  "$(accountFileContent)" > account.json
 
     - name: Read tag_latest
       id: tag_latest
