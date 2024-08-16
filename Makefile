@@ -10,7 +10,7 @@ endif
 
 NAME=cert_bot
 BINDIR=bin
-GOBUILD=CGO_ENABLED=0 go build -ldflags '-X main.version=$(BOT_VERSION) -X main.buildTime=$(COMPILE_TIME) -w -s -buildid='
+GOBUILD=CGO_ENABLED=0 go build -ldflags '-X main.domains=$(domains) -X main.version=$(BOT_VERSION) -X main.buildTime=$(COMPILE_TIME) -w -s -buildid='
 # GOBUILD=CGO_ENABLED=0 go build -ldflags '-w -s -buildid='
 # The -w and -s flags reduce binary sizes by excluding unnecessary symbols and debug info
 # The -buildid= flag makes builds reproducible

@@ -28,7 +28,12 @@ import (
 )
 
 var (
-	domains             string
+	version   = "Unknown"
+	buildTime = "Unknown"
+)
+
+var (
+	domains             string = ""
 	directoryUrl        string
 	contactsList        string
 	accountFile         string
@@ -48,12 +53,16 @@ type acmeAccountFile struct {
 }
 
 func main() {
+	fmt.Println("cet_bot")
+	fmt.Println("\tVersion:\t", version)
+	fmt.Println("\tBuildTime:\t", buildTime)
+
 	flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptProduction,
 		// flag.StringVar(&directoryUrl, "dirurl", acme.LetsEncryptStaging,
 		"acme directory url - defaults to lets encrypt v2 staging url if not provided.\n LetsEncryptProduction = https://acme-v02.api.letsencrypt.org/directory\n LetsEncryptStaging = https://acme-staging-v02.api.letsencrypt.org/directory \n ZeroSSLProduction = https://acme.zerossl.com/v2/DV90")
 	flag.StringVar(&contactsList, "contact", "",
 		"a list of comma separated contact emails to use when creating a new account (optional, dont include 'mailto:' prefix)")
-	flag.StringVar(&domains, "domains", "",
+	flag.StringVar(&domains, "domains", domains,
 		"a comma separated list of domains to issue a certificate for")
 	flag.StringVar(&accountFile, "accountfile", "account.json",
 		"the file that the account json data will be saved to/loaded from (will create new file if not exists)")
