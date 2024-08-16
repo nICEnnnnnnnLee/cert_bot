@@ -1,4 +1,4 @@
-name: Release
+name: Custom Release
 
 on:
   workflow_dispatch:
@@ -27,10 +27,10 @@ on:
         description: 'if set to true, show inputs in logs'
         type: boolean
         default: false
-  push:
-    paths:
-      # Trigger only when src/** changes
-      - ".github/release.json"
+  # push:
+  #   paths:
+  #     # Trigger only when src/** changes
+  #     - ".github/release.json"
 jobs:
   build:
     runs-on: ubuntu-latest
