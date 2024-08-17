@@ -8,11 +8,6 @@ ifeq ($(BOT_VERSION),)
 BOT_VERSION=Unknown
 endif
 
-ifeq ($(domains),)
-NAME_SUFFIX=
-else
-NAME_SUFFIX=.$(domains)
-endif
 
 NAME=cert_bot$(NAME_SUFFIX)
 BINDIR=bin

@@ -43,7 +43,7 @@ jobs:
         echo GITHUB_SHA-$GITHUB_SHA
         echo GITHUB_SHA-$GITHUB_REF
     
-    - name: Echo something
+    - name: Set name
       id: name
       shell: python
       env:
@@ -54,7 +54,7 @@ jobs:
         first_domain = domains.split(",")[0]
         now = datetime.datetime.now()
         nowStr = now.strftime("%y%m")
-        name = f'{first_domain}-{nowStr}'
+        name = f'-{first_domain}-{nowStr}'
         with open(os.environ.get("GITHUB_OUTPUT"),'w', encoding='utf-8') as output:
             output.write("value=" + name)
         
@@ -99,7 +99,8 @@ jobs:
     - run: make -j build
       env:
         BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
-        domains: ${{ steps.name.outputs.value }}
+        NAME_SUFFIX: ${{ steps.name.outputs.value }}
+        domains: ${{ inputs.domains }}
         
     - name: Create Release
       id: create_release
@@ -118,4 +119,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_RELEASE_UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
         BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
-        domains: ${{ steps.name.outputs.value }}
+        NAME_SUFFIX: ${{ steps.name.outputs.value }}
+        domains: ${{ inputs.domains }}
