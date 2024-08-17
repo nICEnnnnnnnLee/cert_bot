@@ -36,6 +36,28 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
+    - name: Echo something
+      run: |
+        echo github.run_id-${{ github.run_id }}
+        echo github.sha-${{ github.sha }}
+        echo GITHUB_SHA-$GITHUB_SHA
+        echo GITHUB_SHA-$GITHUB_REF
+    
+    - name: Echo something
+      id: name
+      shell: python
+      env:
+        domains: ${{ inputs.domains }}
+      run: |
+        import datetime, os
+        domains = os.environ.get("domains", "")
+        first_domain = domains.split(",")[0]
+        now = datetime.datetime.now()
+        nowStr = now.strftime("%y%m")
+        name = f'{first_domain}-{nowStr}'
+        with open(os.environ.get("GITHUB_OUTPUT"),'w', encoding='utf-8') as output:
+            output.write("value=" + name)
+        
     # Run this GitHub Action before any other steps in your workflow. 
     - name: Hide the inputs values to keep them private in the logs when running this workflow
       if: ${{ github.event.inputs.debug != 'true'}}
@@ -77,7 +99,7 @@ jobs:
     - run: make -j build
       env:
         BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
-        domains: ${{ inputs.domains }}
+        domains: ${{ steps.name.outputs.value }}
         
     - name: Create Release
       id: create_release
@@ -96,4 +118,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_RELEASE_UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
         BOT_VERSION: ${{ steps.tag_latest.outputs.value }}
-        domains: ${{ inputs.domains }}
+        domains: ${{ steps.name.outputs.value }}
