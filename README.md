@@ -7,6 +7,8 @@ Support `Cloudflare` API to deploy TXT record.
 
 Support `Afraid` Cookie to deploy TXT record.
 
+Support `He.net` DDNS API to deploy TXT record.
+
 # Usage
 ```
 Usage of cert_bot:
