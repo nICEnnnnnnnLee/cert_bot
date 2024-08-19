@@ -89,6 +89,25 @@ If `dns01.json` do not valid and **-exitifdns01fail=false** pass to the cmd args
     ```
   </details>
 
+  <details>
+      <summary>He.net config</summary>
+
+
+    
+    See <https://dns.he.net/docs.html>. If you want to get cert of `xxx.com`, create a TXT record `_acme-challenge.xxx.com` and enable DDNS first. Besides, don't forget to set password at the same time.
+
+    ```json
+    {
+        "type": "he",
+        "config": {
+            "domain":   "domain for dns01 challenge",
+            "password": "password for specific txt record"
+        }
+    }
+    ```
+  </details>
+
+
 + Set `account.json`(Optional)  
 The program will create `account.json` if it doesn't exist.  
   ```json
