@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,11 +51,17 @@ func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 	var parentDir string
 	parentDir = filepath.Dir(aconfig.CertPath)
 	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
-		return fmt.Errorf("certPath parentDir does not exist: %q", parentDir)
+		log.Printf("Making directory path: %s", parentDir)
+		if err := os.MkdirAll(parentDir, 0755); err != nil {
+			return fmt.Errorf("error creating certPath parentdir %q: %v", parentDir, err)
+		}
 	}
 	parentDir = filepath.Dir(aconfig.KeyPath)
 	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
-		return fmt.Errorf("keyPath parentDir does not exist: %q", parentDir)
+		log.Printf("Making directory path: %s", parentDir)
+		if err := os.MkdirAll(parentDir, 0755); err != nil {
+			return fmt.Errorf("error creating keyPath parentdir %q: %v", parentDir, err)
+		}
 	}
 
 	domainList := strings.Split(aconfig.Domains, ",")
