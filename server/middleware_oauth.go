@@ -2,13 +2,29 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
 func isNeedOAuth() bool {
-	return oauthClientId != "" && oauthClientSecret != ""
+	needAuth := oauthClientId != "" && oauthClientSecret != ""
+	if needAuth {
+		if oauthValidUsers == "" {
+			log.Fatalln(`'OAuthValidUsers' should be set in env. 
+			For multi-users, seperate github logins by ','. 
+			For example, "user1,user2"`)
+		}
+		oauthValidHashes = make(map[string]interface{})
+		for _, user := range strings.Split(oauthValidUsers, ",") {
+			hash := HashMd5(strings.ToLower(user))
+			log.Println(user, hash)
+			oauthValidHashes[hash] = nil
+		}
+	}
+	return needAuth
 }
 
 func AuthH(h http.Handler) http.HandlerFunc {
@@ -18,6 +34,7 @@ func AuthH(h http.Handler) http.HandlerFunc {
 func AuthHF(h http.HandlerFunc) http.HandlerFunc {
 	if bNeedOAuth {
 		return func(w http.ResponseWriter, r *http.Request) {
+			log.Println("check url:", r.RequestURI)
 			// 检查 cookie 的id time hash
 			if isValid(r) {
 				h(w, r)
@@ -46,8 +63,8 @@ func checkValidId(r *http.Request) (*string, bool) {
 	if err != nil {
 		return nil, false
 	}
-	// TODO
-	if cid.Value == "" {
+	_, ok := oauthValidHashes[cid.Value]
+	if !ok {
 		return nil, false
 	}
 	return &cid.Value, true

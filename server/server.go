@@ -28,6 +28,8 @@ var (
 	oauthCookieTTLInt64   int64
 	oauthClientId         = GetEnvOr("OAuthClientId", "")
 	oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
+	oauthValidUsers       = GetEnvOr("OAuthValidUsers", "")
+	oauthValidHashes      map[string]interface{}
 
 	bNeedOAuth = isNeedOAuth()
 

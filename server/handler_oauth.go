@@ -31,12 +31,16 @@ func _oauth(w http.ResponseWriter, r *http.Request) (int, interface{}) {
 	if err != nil {
 		return 4007, err.Error()
 	}
+	hashId := HashMd5(strings.ToLower(id))
+	_, ok := oauthValidHashes[hashId]
+	if !ok {
+		return 4008, id + " is not a valid user"
+	}
 
 	hostWithoutPort, _ := splitHostPort(r.Host)
 	w.Header().Set("Location", uStatic)
 	cookieFmt := `%s=%s; domain=%s; path=%s; max-age=%s; secure; HttpOnly; SameSite=Lax`
 	// github id
-	hashId := HashMd5(id)
 	cid := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_id", hashId, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", cid)
 	// time
@@ -110,7 +114,7 @@ func getId(token string) (string, error) {
 	}
 	id, ok := result["login"]
 	if ok {
-		return string(id), nil
+		return strings.Trim(string(id), `"`), nil
 	} else {
 		return "", fmt.Errorf("no 'login' in response: %s", string(body))
 	}
