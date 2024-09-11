@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var (
@@ -46,7 +48,15 @@ func GetEnvOr(key string, defaultVal string) string {
 
 func startServer(s *http.Server) error {
 	if certPath != "" && keyPath != "" {
-		return s.ListenAndServeTLS(certPath, keyPath)
+		tlsCert := &TlsCert{
+			CertPath:       certPath,
+			KeyPath:        keyPath,
+			AttempDuration: time.Minute * 5,
+		}
+		s.TLSConfig = &tls.Config{
+			GetCertificate: tlsCert.GetCertFunc(),
+		}
+		return s.ListenAndServeTLS("", "")
 	} else {
 		return s.ListenAndServe()
 	}
