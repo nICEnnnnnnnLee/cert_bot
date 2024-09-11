@@ -47,6 +47,7 @@ type HttpResult struct {
 }
 
 func handleConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if r.Method == "GET" {
 		getConfig(w, r)
 		return
@@ -64,7 +65,6 @@ func getConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	id := r.URL.Query().Get("id")
 	conf := AcmeConfigs[id]
 	if conf == nil {
