@@ -33,16 +33,16 @@ oauthCookiePath       = GetEnvOr("OAuthCookiePath", UrlPrefix)
 oauthCookieTTL        = GetEnvOr("OAuthCookieTTL", "3600")
 oauthCookieTTLInt64   int64
 oauthClientId         = GetEnvOr("OAuthClientId", "")
-oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
+OAuthClientSecret     = GetEnvOr("OAuthClientSecret", "")
 oauthValidUsers       = GetEnvOr("OAuthValidUsers", "")
 ```
 
-The important configs are **OAuthClientId**, **oauthClientSecret** and **OAuthValidUsers**.
+The important configs are **OAuthClientId**, **OAuthClientSecret** and **OAuthValidUsers**.
 
 + Prepare a domain `example.com`
 + Homepage URL: `https://example.com{UrlPrefix}/static/`
 + Callback URL: `https://example.com{UrlPrefix}/api/oauth`
-+ Follow the [document](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app) to get **OAuthClientId** and **oauthClientSecret**
++ Follow the [document](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app) to get **OAuthClientId** and **OAuthClientSecret**
 + **OAuthValidUsers**: Your github login account, not email or phone number. For multi-users, use `,` to seperate. Case in-sensetive
 
 
