@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -20,12 +21,15 @@ var (
 	proxyURL              = GetEnvOr("ProxyUrl", "")
 	certPath              = GetEnvOr("CertPath", "")
 	keyPath               = GetEnvOr("KeyPath", "")
-	oauthSalt             = GetEnvOr("OAuthSalt", "OAuthSalt")
+	oauthSalt             = GetEnvOr("OAuthSalt", RandomString(64))
 	oauthCookieNamePrefix = GetEnvOr("OAuthCookieNamePrefix", "crtbot")
 	oauthCookiePath       = GetEnvOr("OAuthCookiePath", UrlPrefix)
 	oauthCookieTTL        = GetEnvOr("OAuthCookieTTL", "3600")
+	oauthCookieTTLInt64   int64
 	oauthClientId         = GetEnvOr("OAuthClientId", "")
 	oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
+
+	bNeedOAuth = isNeedOAuth()
 
 	uTest        = UrlPrefix + "/api/test"
 	uOAuth       = UrlPrefix + "/api/oauth"
@@ -37,14 +41,19 @@ var (
 )
 
 func init() {
+	var err error
+	oauthCookieTTLInt64, err = strconv.ParseInt(oauthCookieTTL, 10, 64)
+	if err != nil {
+		oauthCookieTTLInt64 = 3600
+	}
 	http.HandleFunc(uTest, test)
 	http.HandleFunc(uOAuth, oauth)
-	http.HandleFunc(uConfig, handleConfig)
-	http.HandleFunc(uConfigs, getConfigs)
-	http.HandleFunc(uCertReq, doCertReqDns01)
-	http.HandleFunc(uNginxReload, handleShell("nginx", "-s", "reload"))
+	http.HandleFunc(uConfig, AuthHF(handleConfig))
+	http.HandleFunc(uConfigs, AuthHF(getConfigs))
+	http.HandleFunc(uCertReq, AuthHF(doCertReqDns01))
+	http.HandleFunc(uNginxReload, AuthHF(handleShell("nginx", "-s", "reload")))
 	// http.HandleFunc(UrlPrefix+"/api/scripts/test_win", handleShell("cmd", "/c", "dir", "/b"))
-	http.Handle(uStatic, handlerStaticFS())
+	http.HandleFunc(uStatic, AuthH(handlerStaticFS()))
 }
 
 func GetEnvOr(key string, defaultVal string) string {

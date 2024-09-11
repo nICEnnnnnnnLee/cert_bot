@@ -12,10 +12,12 @@ import (
 	"encoding/pem"
 	"fmt"
 	"log"
+	mrand "math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/eggsampler/acme/v3"
 )
@@ -98,6 +100,16 @@ func HashMd5(raw string) string {
 func HashSHA1(raw string) string {
 	hash := sha1.Sum([]byte(raw))
 	return hex.EncodeToString(hash[:])
+}
+
+func RandomString(length int) string {
+	mrand.Seed(time.Now().UnixNano())
+	const letters = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+-=[]\{}|;':",./<>?`
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = letters[mrand.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 func splitHostPort(hostPort string) (host, port string) {

@@ -36,15 +36,16 @@ func _oauth(w http.ResponseWriter, r *http.Request) (int, interface{}) {
 	w.Header().Set("Location", uStatic)
 	cookieFmt := `%s=%s; domain=%s; path=%s; max-age=%s; secure; HttpOnly; SameSite=Lax`
 	// github id
-	cid := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_id", HashMd5(id), hostWithoutPort, oauthCookiePath, oauthCookieTTL)
+	hashId := HashMd5(id)
+	cid := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_id", hashId, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", cid)
 	// time
-	now := time.Now().UnixMilli()
+	now := time.Now().Unix()
 	nowStr := fmt.Sprintf("%d", now)
 	ctime := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_t", nowStr, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", ctime)
 	// verify
-	raw := fmt.Sprintf("%s|%s|%s", id, oauthSalt, nowStr)
+	raw := fmt.Sprintf("%s|%s|%s", hashId, oauthSalt, nowStr)
 	hash := HashSHA1(raw)
 	cvp := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_vp", hash, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", cvp)
@@ -58,7 +59,7 @@ func getToken(code string) (string, error) {
 		"client_secret": "%s",
 		"code": "%s"
 	}`, oauthClientId, oauthClientSecret, code)
-
+	// log.Println("getToken: ", data)
 	req, _ := http.NewRequest("POST", "https://github.com/login/oauth/access_token", bytes.NewBufferString(data))
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json;charset=UTF-8")
@@ -72,7 +73,7 @@ func getToken(code string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// fmt.Println(string(body))
+	// log.Println(string(body))
 	result := make(map[string]json.RawMessage)
 	err = json.Unmarshal(body, &result)
 	if err != nil {
