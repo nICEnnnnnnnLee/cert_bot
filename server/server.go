@@ -21,12 +21,11 @@ var (
 	certPath              = GetEnvOr("CertPath", "")
 	keyPath               = GetEnvOr("KeyPath", "")
 	oauthSalt             = GetEnvOr("OAuthSalt", "OAuthSalt")
-	oauthCookieNamePrefix = GetEnvOr("OAuthCookieName", "crtbot")
-	oauthCookiePath       = GetEnvOr("OAuthCookieName", UrlPrefix)
-	oauthCookieTTL        = GetEnvOr("OAuthCookieName", "3600")
+	oauthCookieNamePrefix = GetEnvOr("OAuthCookieNamePrefix", "crtbot")
+	oauthCookiePath       = GetEnvOr("OAuthCookiePath", UrlPrefix)
+	oauthCookieTTL        = GetEnvOr("OAuthCookieTTL", "3600")
 	oauthClientId         = GetEnvOr("OAuthClientId", "")
 	oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
-	// oauthSalt = GetEnvOr("OAuthSalt", "salt")
 
 	uTest        = UrlPrefix + "/api/test"
 	uOAuth       = UrlPrefix + "/api/oauth"
