@@ -39,19 +39,18 @@ func _oauth(w http.ResponseWriter, r *http.Request) (int, interface{}) {
 
 	hostWithoutPort, _ := splitHostPort(r.Host)
 	w.Header().Set("Location", uStatic)
-	cookieFmt := `%s=%s; domain=%s; path=%s; max-age=%s; secure; HttpOnly; SameSite=Lax`
 	// github id
-	cid := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_id", hashId, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
+	cid := fmt.Sprintf(oauthCookieFormat, oauthCookieNamePrefix+"_id", hashId, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", cid)
 	// time
 	now := time.Now().Unix()
 	nowStr := fmt.Sprintf("%d", now)
-	ctime := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_t", nowStr, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
+	ctime := fmt.Sprintf(oauthCookieFormat, oauthCookieNamePrefix+"_t", nowStr, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", ctime)
 	// verify
 	raw := fmt.Sprintf("%s|%s|%s", hashId, oauthSalt, nowStr)
 	hash := HashSHA1(raw)
-	cvp := fmt.Sprintf(cookieFmt, oauthCookieNamePrefix+"_vp", hash, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
+	cvp := fmt.Sprintf(oauthCookieFormat, oauthCookieNamePrefix+"_vp", hash, hostWithoutPort, oauthCookiePath, oauthCookieTTL)
 	w.Header().Add("Set-Cookie", cvp)
 	w.WriteHeader(http.StatusFound)
 	return 2000, id

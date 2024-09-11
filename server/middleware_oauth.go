@@ -18,6 +18,7 @@ func isNeedOAuth() bool {
 			For example, "user1,user2"`)
 		}
 		log.Println("OAuthSalt: ", oauthSalt)
+		log.Println("OAuthCookieFormat: ", oauthCookieFormat)
 		oauthValidHashes = make(map[string]interface{})
 		for _, user := range strings.Split(oauthValidUsers, ",") {
 			hash := HashMd5(strings.ToLower(user))

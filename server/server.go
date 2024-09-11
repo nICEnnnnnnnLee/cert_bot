@@ -22,6 +22,7 @@ var (
 	certPath              = GetEnvOr("CertPath", "")
 	keyPath               = GetEnvOr("KeyPath", "")
 	oauthSalt             = GetEnvOr("OAuthSalt", RandomString(64))
+	oauthCookieFormat     = GetEnvOr("OAuthCookieFormat", `%s=%s; domain=%s; path=%s; max-age=%s; secure; HttpOnly; SameSite=Lax`)
 	oauthCookieNamePrefix = GetEnvOr("OAuthCookieNamePrefix", "crtbot")
 	oauthCookiePath       = GetEnvOr("OAuthCookiePath", UrlPrefix)
 	oauthCookieTTL        = GetEnvOr("OAuthCookieTTL", "3600")
