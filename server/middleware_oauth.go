@@ -17,10 +17,11 @@ func isNeedOAuth() bool {
 			For multi-users, seperate github logins by ','. 
 			For example, "user1,user2"`)
 		}
+		log.Println("OAuthSalt: ", oauthSalt)
 		oauthValidHashes = make(map[string]interface{})
 		for _, user := range strings.Split(oauthValidUsers, ",") {
 			hash := HashMd5(strings.ToLower(user))
-			log.Println(user, hash)
+			log.Println("OAuth Valid User: ", user, hash)
 			oauthValidHashes[hash] = nil
 		}
 	}
@@ -34,6 +35,9 @@ func AuthH(h http.Handler) http.HandlerFunc {
 func AuthHF(h http.HandlerFunc) http.HandlerFunc {
 	if bNeedOAuth {
 		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "private, max-age=0, no-cache")
+			w.Header().Add("Cache-Control", "private, max-age=0, must-revalidate")
+			w.Header().Add("Cache-Control", "no-store")
 			log.Println("check url:", r.RequestURI)
 			// 检查 cookie 的id time hash
 			if isValid(r) {
@@ -90,5 +94,7 @@ func isValidHash(r *http.Request, hashId *string, timeInt64 *int64) bool {
 	}
 	expectedRaw := fmt.Sprintf("%s|%s|%d", *hashId, oauthSalt, *timeInt64)
 	expectedHash := HashSHA1(expectedRaw)
+	// log.Println("expectedHash:", expectedHash)
+	// log.Println("actualHash:", hash.Value)
 	return hash.Value == expectedHash
 }
