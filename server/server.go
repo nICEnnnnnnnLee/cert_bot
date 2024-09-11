@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/bddjr/hlfhr"
 )
 
 var (
@@ -30,6 +33,7 @@ func init() {
 		}
 	})
 
+	http.HandleFunc(UrlPrefix+"/api/test", test)
 	http.HandleFunc(UrlPrefix+"/api/configs", getConfigs)
 	http.HandleFunc(UrlPrefix+"/api/req", doCertReqDns01)
 	http.HandleFunc(UrlPrefix+"/api/scripts/nginx", handeShell("nginx", "-s", "reload"))
@@ -56,7 +60,16 @@ func startServer(s *http.Server) error {
 		s.TLSConfig = &tls.Config{
 			GetCertificate: tlsCert.GetCertFunc(),
 		}
-		return s.ListenAndServeTLS("", "")
+
+		l, err := net.Listen("tcp", s.Addr)
+		if err != nil {
+			return err
+		}
+		defer l.Close()
+
+		// Use hlfhr.NewListener
+		l = hlfhr.NewListener(l, s, nil)
+		return s.ServeTLS(l, "", "")
 	} else {
 		return s.ListenAndServe()
 	}
