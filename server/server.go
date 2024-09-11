@@ -15,12 +15,21 @@ import (
 )
 
 var (
-	UrlPrefix = GetEnvOr("UrlPrefix", "/xx")
-	bindAddr  = GetEnvOr("BindAddr", "127.0.0.1:8080")
-	certPath  = GetEnvOr("CertPath", "")
-	keyPath   = GetEnvOr("KeyPath", "")
+	UrlPrefix             = GetEnvOr("UrlPrefix", "/xx")
+	bindAddr              = GetEnvOr("BindAddr", "127.0.0.1:8080")
+	proxyURL              = GetEnvOr("ProxyUrl", "")
+	certPath              = GetEnvOr("CertPath", "")
+	keyPath               = GetEnvOr("KeyPath", "")
+	oauthSalt             = GetEnvOr("OAuthSalt", "OAuthSalt")
+	oauthCookieNamePrefix = GetEnvOr("OAuthCookieName", "crtbot")
+	oauthCookiePath       = GetEnvOr("OAuthCookieName", UrlPrefix)
+	oauthCookieTTL        = GetEnvOr("OAuthCookieName", "3600")
+	oauthClientId         = GetEnvOr("OAuthClientId", "")
+	oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
+	// oauthSalt = GetEnvOr("OAuthSalt", "salt")
 
 	uTest        = UrlPrefix + "/api/test"
+	uOAuth       = UrlPrefix + "/api/oauth"
 	uConfig      = UrlPrefix + "/api/config"
 	uConfigs     = UrlPrefix + "/api/configs"
 	uCertReq     = UrlPrefix + "/api/req"
@@ -30,6 +39,7 @@ var (
 
 func init() {
 	http.HandleFunc(uTest, test)
+	http.HandleFunc(uOAuth, oauth)
 	http.HandleFunc(uConfig, handleConfig)
 	http.HandleFunc(uConfigs, getConfigs)
 	http.HandleFunc(uCertReq, doCertReqDns01)
@@ -82,6 +92,7 @@ func (exitSig) Signal() {}
 func Main() {
 
 	log.Println("Running service at " + bindAddr)
+	initProxyUrl(proxyURL)
 	server := &http.Server{
 		Addr: bindAddr,
 	}

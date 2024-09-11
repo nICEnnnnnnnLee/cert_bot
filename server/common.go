@@ -4,12 +4,18 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/eggsampler/acme/v3"
 )
@@ -70,4 +76,53 @@ func pem2key(data []byte) *ecdsa.PrivateKey {
 		log.Panicf("Error decoding key: %v", err)
 	}
 	return key
+}
+
+func initProxyUrl(proxyURL string) {
+	if proxyURL != "" {
+		proxyUrl, err := url.Parse(proxyURL)
+		if err != nil {
+			log.Println("proxy url is not valid: ", proxyURL)
+		} else {
+			http.DefaultClient.Transport = &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
+		}
+	}
+}
+
+func HashMd5(raw string) string {
+	hash := md5.Sum([]byte(raw))
+	return hex.EncodeToString(hash[:])
+}
+func HashSHA1(raw string) string {
+	hash := sha1.Sum([]byte(raw))
+	return hex.EncodeToString(hash[:])
+}
+
+func splitHostPort(hostPort string) (host, port string) {
+	host = hostPort
+	colon := strings.LastIndexByte(host, ':')
+	if colon != -1 && validOptionalPort(host[colon:]) {
+		host, port = host[:colon], host[colon+1:]
+	}
+	if strings.HasPrefix(host, "[") && strings.HasSuffix(host, "]") {
+		host = host[1 : len(host)-1]
+	}
+	return
+}
+
+func validOptionalPort(port string) bool {
+	if port == "" {
+		return true
+	}
+	if port[0] != ':' {
+		return false
+	}
+	for _, b := range port[1:] {
+		if b < '0' || b > '9' {
+			return false
+		}
+	}
+	return true
 }
