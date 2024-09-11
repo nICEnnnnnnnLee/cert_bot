@@ -66,13 +66,31 @@ server {
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $http_host;
         proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 360s;
+        proxy_connect_timeout 60s;
     }
     #PROXY-END/
 }
 ```
 
+### Linux usage example
+```
+wget https://github.com/nICEnnnnnnnLee/cert_bot/releases/download/v0.0.4/cert_bot-linux-amd64.zip
+unzip cert_bot-linux-amd64.zip
+
+export UrlPrefix=/xx
+export BindAddr=127.0.0.1:8080
+export OAuthClientId=xxxid
+export OAuthClientSecret=xxxsecret
+export OAuthValidUsers=user1,user2
+nohup ./cert_bot-linux-amd64 > /dev/null 2>&1 &
+// then visit https://example.com/xx/static/ 
+// then it will redirect to https://github.com/login/oauth/access_token for access grant
+// then it will redirect to https://example.com/xx/api/oauth for cookie set
+// then it will redirect to https://example.com/xx/static/
+```
 
 ## cli
 Set environment `Mode` to `cli`, then see the [doc for cli](/README_CLI.md)
 
-# Quick Start
