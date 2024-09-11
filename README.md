@@ -9,154 +9,70 @@ Support `Afraid` Cookie to deploy TXT record.
 
 Support `He.net` DDNS API to deploy TXT record.
 
-# Usage
+# Mode
+## http server
+Set environment `Mode` to `server`.
+
+You can edit environment values refering to codes below:
 ```
-Usage of cert_bot:
-  -accountfile string
-        the file that the account json data will be saved to/loaded from (will create new file if not exists) (default "account.json")
-  -certfile string
-        the file that the pem encoded certificate chain will be saved to (default "cert.pem")
-  -contact string
-        a list of comma separated contact emails to use when creating a new account (optional, dont include 'mailto:' prefix)
-  -dirurl string
-        acme directory url - defaults to lets encrypt v2 staging url if not provided.
-         LetsEncryptProduction = https://acme-v02.api.letsencrypt.org/directory
-         LetsEncryptStaging = https://acme-staging-v02.api.letsencrypt.org/directory
-         ZeroSSLProduction = https://acme.zerossl.com/v2/DV90
-         (default "https://acme-v02.api.letsencrypt.org/directory")
-  -dns01file string
-        the file that the dns01 json data will be loaded from (will exit if not exists) (default "dns01.json")
-  -dnsserver string
-        dnsServer to check txt record (default "8.8.8.8:53")
-  -domains string
-        a comma separated list of domains to issue a certificate for
-  -exitifdns01fail
-        exit if dns01 config is not valid, or just manualy set dns txt record (default true)
-  -keyfile string
-        the file that the pem encoded certificate private key will be saved to (default "privkey.pem")
-  -txtmaxcheck int
-        the max time trying to verify the txt record. program will continue after max retries no matter if the txt record is valid or not from local spec (default 30)
+UrlPrefix             = GetEnvOr("UrlPrefix", "/xx")            // {UrlPrefix}/api  {UrlPrefix}/static 
+bindAddr              = GetEnvOr("BindAddr", "127.0.0.1:8080")
+proxyURL              = GetEnvOr("ProxyUrl", "")                // the app will use ProxyUrl for http request
+certPath              = GetEnvOr("CertPath", "")                // if CertPath and KeyPath not empty, server is HTTPS, else HTTP
+keyPath               = GetEnvOr("KeyPath", "")
 ```
+
+### Github OAuth
+You can use Github OAuth to protect secrets.
+
+Details of configs are as follows.
+```
+oauthCookieFormat     = GetEnvOr("OAuthCookieFormat", `%s=%s; domain=%s; path=%s; max-age=%s; secure; HttpOnly; SameSite=Lax`)
+oauthCookieNamePrefix = GetEnvOr("OAuthCookieNamePrefix", "crtbot")
+oauthCookiePath       = GetEnvOr("OAuthCookiePath", UrlPrefix)
+oauthCookieTTL        = GetEnvOr("OAuthCookieTTL", "3600")
+oauthCookieTTLInt64   int64
+oauthClientId         = GetEnvOr("OAuthClientId", "")
+oauthClientSecret     = GetEnvOr("OAuthClientSecret", "")
+oauthValidUsers       = GetEnvOr("OAuthValidUsers", "")
+```
+
+The important configs are **OAuthClientId**, **oauthClientSecret** and **OAuthValidUsers**.
+
++ Prepare a domain `example.com`
++ Homepage URL: `https://example.com{UrlPrefix}/static/`
++ Callback URL: `https://example.com{UrlPrefix}/api/oauth`
++ Follow the [document](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app) to get **OAuthClientId** and **oauthClientSecret**
++ **OAuthValidUsers**: Your github login account, not email or phone number. For multi-users, use `,` to seperate. Case in-sensetive
+
+
+### Nginx config example
+
+```
+server {
+    listen [::]:443 ssl http2;
+    listen  443 ssl http2;
+    ssl_certificate       /path/to/pem;
+    ssl_certificate_key   /path/to/key;
+    server_name           example.com;
+    
+    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers           HIGH:!aNULL:!MD5;
+    root html;
+    error_page 404    /404.html;
+    
+    #PROXY-START/
+    location {UrlPrefix} {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $http_host;
+        proxy_request_buffering off;
+    }
+    #PROXY-END/
+}
+```
+
+
+## cli
+Set environment `Mode` to `cli`, then see the [doc for cli](/README_CLI.md)
 
 # Quick Start
-
-+ Set `dns01.json`(Optional)  
-If `dns01.json` do not valid and **-exitifdns01fail=false** pass to the cmd args, you can set the TXT record manually.
-  <details>
-      <summary>Cloudflare config</summary>
-
-
-    
-    If `api-email` is not empty, the auth uses header `X-Auth-Email` and `X-Auth-Key`; or else it just use header `Authorization`.  
-    See <https://dash.cloudflare.com/profile/api-tokens>
-
-    + `X-Auth-Email` + `X-Auth-Key`
-    ```json
-    {
-      "type": "cloudflare",
-      "config": {
-        "api-email": "cf email account",
-        "api-key": "global key",
-        "domain": "the root domain in the dash borad panel. e.g. example.com"
-      }
-    }
-    ```
-    + `Authorization`
-    ```json
-    {
-      "type": "cloudflare",
-      "config": {
-        "api-key": "dedicated token",
-        "domain": "the root domain in the dash borad panel. e.g. example.com"
-      }
-    }
-    ```
-  </details>
-
-  <details>
-      <summary>Afraid config</summary>
-
-
-    
-    See <https://freedns.afraid.org/faq/#17>
-
-    ```json
-    {
-      "type": "cloudflare",
-      "config": {
-        "dns_cookie": "get from browser",
-        "domain_id": "number format id, get it from browser"
-      }
-    }
-    ```
-  </details>
-
-  <details>
-      <summary>He.net config</summary>
-
-
-    
-    See <https://dns.he.net/docs.html>. If you want to get cert of `xxx.com`, create a TXT record `_acme-challenge.xxx.com` and enable DDNS first. Besides, don't forget to set password at the same time.
-
-    ```json
-    {
-        "type": "he",
-        "config": {
-            "domain":   "domain for dns01 challenge",
-            "password": "password for specific txt record"
-        }
-    }
-    ```
-  </details>
-
-
-+ Set `account.json`(Optional)  
-The program will create `account.json` if it doesn't exist.  
-  ```json
-  {
-    "privateKey":"-----BEGIN EC PRIVATE KEY-----\n...aaa\n...bbb\n-----END EC PRIVATE KEY-----\n",
-    "url":"https://acme-staging-v02.api.letsencrypt.org/acme/acct/[0-9]+"
-  }
-  ```
-
-+ Run `cet_bot`
-  ```sh
-  cet_bot -domains example.com,*.example.com
-  ```
-
-+ Get the outputs  
-You will see `privkey.pem` and `cert.pem` in the same directory
-
-
-# Specify input/output file path
-See `Usage` for  help, or run help command
-```sh
-cet_bot -h
-```
-
-Here's an example.(replace `\` with `^` on windows)
-```sh
-mkdir -p ./certs/example.org
-cet_bot -domains example.org,*.example.org              \
-    -dns01file    ./certs/example.org/dns01.org.json    \
-    -accountfile  ./certs/example.org/account.json      \
-    -keyfile      ./certs/example.org/privkey.pem       \
-    -certfile     ./certs/example.org/cert.pem          \
-    -dnsserver 1.1.1.1:53
-```
-
-Or manually set the txt records:
-```sh
-mkdir -p ./certs/example.org
-cet_bot -domains example.org,*.example.org              \
-    -accountfile  ./certs/example.org/account.json      \
-    -keyfile      ./certs/example.org/privkey.pem       \
-    -certfile     ./certs/example.org/cert.pem          \
-    -dnsserver 1.1.1.1:53 -exitifdns01fail=false
-```
-
-# Custom your private app
-You can insert `account.json` and `dns01.json` into executable binary, and custom the default `-domains` value.  
-
-After that, every time you need is to run `cet_bot` without `-domains`,`-accountfile` or `-dns01file`.  
-Just see the `custom` branch.

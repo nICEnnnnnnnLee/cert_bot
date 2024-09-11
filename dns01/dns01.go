@@ -8,3 +8,7 @@ import (
 )
 
 var FromFile = common.FromFile
+
+type DNS01Setting struct {
+	common.DNS01Setting
+}
