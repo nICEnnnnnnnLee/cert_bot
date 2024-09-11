@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -44,6 +45,18 @@ func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 		flusher.Flush()
 	}
 	Fprintf("Dns01 http challenge")
+
+	// make sure a CertPath/ directory exists
+	var parentDir string
+	parentDir = filepath.Dir(aconfig.CertPath)
+	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
+		return fmt.Errorf("certPath parentDir does not exist: %q", parentDir)
+	}
+	parentDir = filepath.Dir(aconfig.KeyPath)
+	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
+		return fmt.Errorf("keyPath parentDir does not exist: %q", parentDir)
+	}
+
 	domainList := strings.Split(aconfig.Domains, ",")
 	var ids []acme.Identifier
 	for _, domain := range domainList {
