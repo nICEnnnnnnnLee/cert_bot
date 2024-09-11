@@ -46,6 +46,17 @@ type HttpResult struct {
 	Data interface{} `json:"data"`
 }
 
+func handleConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		getConfig(w, r)
+		return
+	}
+	if r.Method == "POST" {
+		setConfig(w, r)
+		return
+	}
+}
+
 func getConfigs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	bytes, _ := json.Marshal(AcmeConfigs)

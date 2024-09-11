@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-func handeShell(name string, arg ...string) func(w http.ResponseWriter, r *http.Request) {
+func handleShell(name string, arg ...string) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")

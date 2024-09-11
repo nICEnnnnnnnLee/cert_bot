@@ -19,26 +19,23 @@ var (
 	bindAddr  = GetEnvOr("BindAddr", "127.0.0.1:8080")
 	certPath  = GetEnvOr("CertPath", "")
 	keyPath   = GetEnvOr("KeyPath", "")
+
+	uTest        = UrlPrefix + "/api/test"
+	uConfig      = UrlPrefix + "/api/config"
+	uConfigs     = UrlPrefix + "/api/configs"
+	uCertReq     = UrlPrefix + "/api/req"
+	uNginxReload = UrlPrefix + "/api/scripts/nginx"
+	uStatic      = UrlPrefix + "/static/"
 )
 
 func init() {
-	http.HandleFunc(UrlPrefix+"/api/config", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			getConfig(w, r)
-			return
-		}
-		if r.Method == "POST" {
-			setConfig(w, r)
-			return
-		}
-	})
-
-	http.HandleFunc(UrlPrefix+"/api/test", test)
-	http.HandleFunc(UrlPrefix+"/api/configs", getConfigs)
-	http.HandleFunc(UrlPrefix+"/api/req", doCertReqDns01)
-	http.HandleFunc(UrlPrefix+"/api/scripts/nginx", handeShell("nginx", "-s", "reload"))
-	// http.HandleFunc(UrlPrefix+"/api/scripts/test_win", handeShell("cmd", "/c", "dir", "/b"))
-	http.Handle(UrlPrefix+"/static/", handlerStaticFS())
+	http.HandleFunc(uTest, test)
+	http.HandleFunc(uConfig, handleConfig)
+	http.HandleFunc(uConfigs, getConfigs)
+	http.HandleFunc(uCertReq, doCertReqDns01)
+	http.HandleFunc(uNginxReload, handleShell("nginx", "-s", "reload"))
+	// http.HandleFunc(UrlPrefix+"/api/scripts/test_win", handleShell("cmd", "/c", "dir", "/b"))
+	http.Handle(uStatic, handlerStaticFS())
 }
 
 func GetEnvOr(key string, defaultVal string) string {
