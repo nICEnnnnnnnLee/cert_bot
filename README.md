@@ -1,7 +1,7 @@
 # cert_bot
 Obtain certs from Let's Encrypt.
 
-Only support `dns-01` challenge.
+Support `dns-01`/`http-01` challenge, `http-01` will effect if `dns01` config is null.
 
 Support `Cloudflare` API to deploy TXT record.
 
@@ -20,6 +20,13 @@ bindAddr              = GetEnvOr("BindAddr", "127.0.0.1:8080")
 proxyURL              = GetEnvOr("ProxyUrl", "")                // the app will use ProxyUrl for http request
 certPath              = GetEnvOr("CertPath", "")                // if CertPath and KeyPath not empty, server is HTTPS, else HTTP
 keyPath               = GetEnvOr("KeyPath", "")
+```
+
+For http01 challenge, there are addtional config
+```
+enableHttp01          = GetEnvOr("EnableHttp01", "true")
+bindAddrHttp01        = GetEnvOr("BindAddrHttp01", "127.0.0.1:8081")
+webRootHttp01         = GetEnvOr("WebRootHttp01", "")
 ```
 
 ### Github OAuth
@@ -50,6 +57,8 @@ The important configs are **OAuthClientId**, **OAuthClientSecret** and **OAuthVa
 
 ```
 server {
+    listen 80;          # For http challenge
+    listen [::]:80;     # For http challenge
     listen [::]:443 ssl http2;
     listen  443 ssl http2;
     ssl_certificate       /path/to/pem;
@@ -71,6 +80,18 @@ server {
         proxy_connect_timeout 60s;
     }
     #PROXY-END/
+
+    #HTTP01 challenge-START/
+    # or set root same as {WebRootHttp01}
+    location /.well-known/acme-challenge/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $http_host;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 360s;
+        proxy_connect_timeout 60s;
+    }
+    #HTTP01 challenge-END/
 }
 ```
 

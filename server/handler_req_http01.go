@@ -13,34 +13,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/eggsampler/acme/v3"
 )
 
-func doCertReq(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	conf := AcmeConfigs[id]
-	if conf == nil {
-		w.Write([]byte("{\"err\": 4000,\"msg\": \"No id matched!!!\"}"))
-		return
-	}
-	w.Header().Set("Content-Type", "text/plain")
-	var err error
-	if conf.Dns01 != nil {
-		err = _doCertReqDns01(conf, w)
-	} else {
-		err = _doCertReqHttp01(conf, w)
-	}
-	if err != nil {
-		fmt.Fprintf(w, "%+v", err)
-	}
-}
-
-func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
+func _doCertReqHttp01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("error doCertReqDns01: %v", r)
+			err = fmt.Errorf("error doCertReqHttp01: %v", r)
 		}
 	}()
 	flusher, _ := w.(http.Flusher)
@@ -50,7 +30,7 @@ func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 		fmt.Fprintln(w)
 		flusher.Flush()
 	}
-	Fprintf("Dns01 http challenge")
+	Fprintf("Http01 http challenge")
 
 	// make sure a CertPath/ directory exists
 	var parentDir string
@@ -101,8 +81,15 @@ func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 		return fmt.Errorf("error creating new order: %v", err)
 	}
 	Fprintf("Order created: %s", order.URL)
+	// prepend the .well-known/acme-challenge path to the webroot path
+	webroot := filepath.Join(webRootHttp01, ".well-known", "acme-challenge")
+	if _, err := os.Stat(webroot); os.IsNotExist(err) {
+		Fprintf("Making directory path: %s", webroot)
+		if err := os.MkdirAll(webroot, 0755); err != nil {
+			return fmt.Errorf("error creating webroot path %q: %v", webroot, err)
+		}
+	}
 	// loop through each of the provided authorization urls
-	dMap := make(map[string]interface{})
 	for _, authUrl := range order.Authorizations {
 		// fetch the authorization data from the acme service given the provided authorization url
 		Fprintf("Fetching authorization: %s", authUrl)
@@ -111,47 +98,18 @@ func _doCertReqDns01(aconfig *AcmeConfig, w http.ResponseWriter) (err error) {
 			return fmt.Errorf("error fetching authorization url %q: %v", authUrl, err)
 		}
 		Fprintf("Fetched authorization: %s", auth.Identifier.Value)
-		chal, ok := auth.ChallengeMap[acme.ChallengeTypeDNS01]
+		chal, ok := auth.ChallengeMap[acme.ChallengeTypeHTTP01]
 		if !ok {
-			return fmt.Errorf("unable to find dns challenge for auth %s", auth.Identifier.Value)
-		}
-		txt := acme.EncodeDNS01KeyAuthorization(chal.KeyAuthorization)
-
-		Fprintf("TXT record to set: %s", txt)
-		dns01, err := aconfig.Dns01.NewDNS01()
-		if err != nil {
-			return fmt.Errorf("no valid dns01 config json provided: %v", err)
-		}
-		if _, ok := dMap[auth.Identifier.Value]; !ok {
-			dns01.DeleteTXT(auth.Identifier.Value)
-			dMap[auth.Identifier.Value] = nil
-		}
-		err = dns01.SetTXT(txt)
-		if err != nil {
-			return fmt.Errorf("error set txt record: %v", err)
-		}
-		// wait for record refresh
-		for i := 1; i <= 2; i++ {
-			Fprintf("Wait %ds, let the txt record update", i*5)
-			time.Sleep(time.Second * 5)
-		}
-		Fprintf("-------------")
-		for i := 1; i <= 3; i++ {
-			Fprintf("Wait %ds, let the txt record update and check", i*5)
-			time.Sleep(time.Second * 5)
-			err = checkTxtRecord(auth.Identifier.Value, txt)
-			if err != nil {
-				Fprintf("%v", err)
-			} else {
-				break
-			}
-		}
-		Fprintf("-------------")
-		for i := 1; i <= 6; i++ {
-			Fprintf("Wait %ds, let the txt record update", i*5)
-			time.Sleep(time.Second * 5)
+			return fmt.Errorf("unable to find http challenge for auth %s", auth.Identifier.Value)
 		}
 
+		// create the challenge token file with the key authorization from the challenge
+		tokenFile := filepath.Join(webroot, chal.Token)
+		Fprintf("Creating challenge token file: %s", tokenFile)
+		defer os.Remove(tokenFile)
+		if err := os.WriteFile(tokenFile, []byte(chal.KeyAuthorization), 0644); err != nil {
+			return fmt.Errorf("error writing authorization %s challenge file %q: %v", auth.Identifier.Value, tokenFile, err)
+		}
 		// update the acme server that the challenge file is ready to be queried
 		Fprintf("Updating challenge for authorization %s: %s", auth.Identifier.Value, chal.URL)
 		chal, err = client.UpdateChallenge(account, chal)
