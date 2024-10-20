@@ -1,7 +1,7 @@
 # cert_bot
 Obtain certs from Let's Encrypt.
 
-Only support `dns-01` challenge.
+Support `dns-01`/`http-01` challenge, `http-01` will effect if `dns01` config is null.
 
 Support `Cloudflare` API to deploy TXT record.
 
