@@ -57,6 +57,7 @@ type txtRecord struct {
 	Type    string `json:"type"`
 	Name    string `json:"name"`
 	Content string `json:"content"`
+	TTL     int `json:"ttl"`
 }
 
 func (cf *Cloudflare) setAuth(header http.Header) {
@@ -151,6 +152,7 @@ func (cf *Cloudflare) SetTXT(txt string) (err error) {
 		Type:    "TXT",
 		Name:    "_acme-challenge",
 		Content: txt,
+		TTL:     60,
 	}
 	data, err := json.Marshal(record)
 	if err != nil {
