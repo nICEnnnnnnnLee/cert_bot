@@ -1,1 +1,1 @@
-Add support for http01 challenge
+Set TTL of Cloudflare TXT records to `60`
